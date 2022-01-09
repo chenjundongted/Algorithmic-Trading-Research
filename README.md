@@ -1,4 +1,6 @@
 ### Algorithmic-Trading-Research
 
-#### Pending Tasks:
+#### Indicators
 - EMA: Exponential Moving Average ```def(smoothing_factor, length)```
+- VWAP: Volume Weighted Average Price
+- VP: Session Volume Profile
