@@ -2,7 +2,7 @@
 
 #### Indicators
 - CCI
-- Price Volume
+- Volume Profile
 
 ---
 
