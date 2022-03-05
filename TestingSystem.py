@@ -1,3 +1,5 @@
+import random
+
 # updatePosition(time, symbol, behavoir, price):
 updatePositionTestingData = [
     # Testing double position error and wrong behavior error
@@ -26,7 +28,7 @@ updatePositionTestingData = [
         ["2022-02-03 13:50", "BABA", "stc", 200.06],
 ];
 
-# visualizePL()
+# visualizePL(benchmark):
 visualizePLData = [
     ["2022-02-01 10:03", "NIO", "bto", 30.23],
     ["2022-02-01 10:45", "XPEV", "sto", 10.91],

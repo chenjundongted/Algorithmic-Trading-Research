@@ -1,6 +1,10 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import TestingSystem as ts
+import pandas as pd
+from scipy import stats, signal
+import plotly.express as px
+import plotly.graph_objects as go
 
 class BacktestSystem:
 
@@ -19,6 +23,55 @@ class BacktestSystem:
     # class variables
     position = [] # active position [time, symbol, behavior, price, shares]
     positionLog = [] # closed position [time, symbol, behavior, price, shares, closedTime, closedPrice, PL, totalPL]
+
+
+    def kernelDensityEstimator(self, data):
+        volume = data["vol"]
+        close = data["close"]
+        kde_factor = 0.05
+        num_samples = 500
+        kde = stats.gaussian_kde(close, weights= volume, bw_method= kde_factor)
+        xr = np.linspace(close.min(),close.max(),num_samples)
+        kdy = kde(xr)
+        ticks_per_sample = (xr.max() - xr.min()) / num_samples
+
+        # vol distribution
+        fig = go.Figure()
+        fig.add_trace(go.Histogram(name='Vol Profile', x=close, y=volume, nbinsx=400, histfunc='sum', histnorm='probability density', marker_color='#B0C4DE'))
+        fig.add_trace(go.Scatter(name='KDE', x=xr, y=kdy, mode='lines', marker_color='#D2691E'))
+
+        # find vol nodes and set prominence to filter out insignificant nodes
+        pk_marker_args = dict(size= 10)
+        min_prom = kdy.max() * 0.3
+        width_range=1
+        peaks, peak_props = signal.find_peaks(kdy, prominence=min_prom, width= width_range)
+        pkx = xr[peaks]
+        pky = kdy[peaks]
+
+        left_base = peak_props['left_bases']
+        right_base = peak_props['right_bases']
+        line_x = pkx
+        line_y0 = pky
+        line_y1 = pky - peak_props['prominences']
+
+        # peak width
+        left_ips = peak_props['left_ips']
+        right_ips = peak_props['right_ips']
+        width_x0 = xr.min() + (left_ips * ticks_per_sample)
+        width_x1 = xr.min() + (right_ips * ticks_per_sample)
+        width_y = peak_props['width_heights']
+        fig.add_trace(go.Scatter(name='Peaks', x=pkx, y=pky, mode='markers', marker=pk_marker_args))
+
+        # Draw peak height
+        for x, y0, y1 in zip(line_x, line_y0, line_y1):
+            fig.add_shape(type='line', xref='x', yref='y', x0=x, y0=y0, x1=x, y1=y1, line=dict(color='red', width=2, ))
+
+        # Draw peak width
+        for x0, x1, y in zip(width_x0, width_x1, width_y):
+            fig.add_shape(type='line', xref='x', yref='y', x0=x0, y0=y, x1=x1, y1=y, line=dict(color='red', width=2, ))
+            print(f"({x0}, {x1})")
+
+        fig.show()
 
     def updatePosition(self, time, symbol, behavior, price):
         # time -> time to open the position
@@ -125,6 +178,12 @@ def main():
         sys.updatePosition(trade[0], trade[1], trade[2], trade[3])
     sys.visualizePL(ts.visualizePLBenchMarkData)
     """
+
+    data = pd.read_csv("dataSample.txt", sep= ",", header= None)
+    data.columns = ["time", "open", "high", "low", "close", "vol"]
+    data["time"] = pd.to_datetime(data["time"])
+    mask = data["time"].between("2021-08-02 04:00:00", "2021-08-05 19:59:00")
+    sys.kernelDensityEstimator(data[mask])
 
 
 
